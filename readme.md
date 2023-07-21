@@ -8,10 +8,10 @@ This repository is designed to help you to create a database system between two 
 ### Before you begin
 You need 2 kubernetes clusters avaiable on any cloud platforms
 
-### Those two cluster shoud be on the same VPC!
+### Those two clusters shoud be on the same VPC! or do the VPC peering in case the clusters are on different VPCs.
 
-### Require to be install on your machine
-Kubectx Check out the installation here  <a href="https://linkerd.io/2.13/getting-started/" target="_blank" style="font-size: 20px">Link</a>
+### Require to be installed on your machine
+Kubectx Check out the installation here  <a href="https://github.com/ahmetb/kubectx" target="_blank" style="font-size: 20px">Link</a>
 
 ### Usage of Kubectx
 You don't have to write --context=$context every time
@@ -36,7 +36,7 @@ You don't have to write --context=$context every time
 <br><hr/>
 
 ### Install TiDB operator on Cluster 2
-Swaping context with kubectx is require in this step
+Swapping context with kubectx is require in this step
 
     kubectx ${context2}
     helm repo add pingcap https://charts.pingcap.org/
@@ -45,7 +45,7 @@ Swaping context with kubectx is require in this step
 
 <br><hr/>
 
-### Confirm that TiDB operator is running 
+### Confirm that TiDB operator is running on both clusters
     kubectl get pods --namespace tidb-admin -l app.kubernetes.io/instance=tidb-operator
 
 <details>
@@ -59,7 +59,7 @@ Swaping context with kubectx is require in this step
 
 <br><hr/>
 
-### Get DNS port in our cluster machine
+### Get DNS service in our cluster
     kubectl get svc -n kube-system --context=${context1}
     
 <details>
@@ -72,7 +72,7 @@ Swaping context with kubectx is require in this step
 
 </details>
 
-External Ip of kube-dns is not avaiable case of type of kube-dns is ClusterIP if we change the type of kube-dns to be LoadBalancer the external-ip will be avaiable
+External Ip of kube-dns is not avaiable in case of type of kube-dns service is ClusterIP, if we change the type of kube-dns service to be LoadBalancer, the external-ip will be avaiable
 
     kubectl edit svc kube-dns -n kube-system --context=${context1}
 <details>
@@ -90,7 +90,7 @@ External Ip of kube-dns is not avaiable case of type of kube-dns is ClusterIP if
 <br><hr/>
 
   
-### Forward Port DNS to make cluster can communicate
+### Forward DNS IP to make both clusters can communicate each other
 Edit coredns/corednscluster1.yaml with your External Ip from cluster2
 Edit coredns/corednscluster2.yaml with your External Ip from cluster1
     <details>
@@ -112,8 +112,8 @@ Edit coredns/corednscluster2.yaml with your External Ip from cluster1
         }
 
         # puglife.server : any name with .server is fine
-        # hello-2 : your namespace that tidbcluster will be allocate in $cluster2
-        # 20.205.255.74 : External Ip from cluster 2
+        # hello-2 : your namespace that tidbcluster will be allocated in $cluster2
+        # 20.205.255.74 : External DNS IP from cluster 2
 
 </details>
 
@@ -133,7 +133,7 @@ Edit coredns/corednscluster2.yaml with your External Ip from cluster1
 
 <br><hr/>
 
-### Check Status TiDB Cluster on both cluster
+### Check Status TiDB Cluster on both clusters
     kubectl get po -n hello-1 --context=${context1}
     kubectl get po -n hello-2 --context=${context2}
 <details>
@@ -158,7 +158,7 @@ Edit coredns/corednscluster2.yaml with your External Ip from cluster1
 
 ### Verify that you can connect to the database using mysql workbench or mysql client
 
-We need to forward port to our machine and create a connection in mysql workbench or mysql client (in this case we will use mysql workbench) 
+We need to forward port to our machine and create a connection in mysql workbench or mysql client (in this case, we will use mysql workbench) 
 
     kubectl --context=${context1} port-forward -n hello-1 svc/tidbcluster1-tidb 15000:4000
 
@@ -176,7 +176,7 @@ We need to forward port to our machine and create a connection in mysql workbenc
 
 <br><hr/>
 
-### Create mock data to table test
+### Create mock data with table user
     use test;
 
     CREATE TABLE User (
@@ -203,8 +203,8 @@ We need to forward port to our machine and create a connection in mysql workbenc
 
 <br><hr/>
 
-### Check that cluster have been merge
-Close Forward port in cluster1 and forward port for cluster2
+### Check that the data from both clusters have been merged
+Close Forward port in cluster1 and forward port for db cluster2
     
     kubectl --context=${context2} port-forward -n hello-2 svc/tidbcluster2-tidb 15000:4000
 
@@ -213,12 +213,12 @@ Close Forward port in cluster1 and forward port for cluster2
 ### Query some data
 
     SELECT * FROM test.User;
-    # If you get the same output from cluster1 that mean the your cluster have been merge
+    # If you get the same output from the db cluster1 that mean, the data from both clusters have been merged
 
 <br><hr/>
 
 ### Let Backup our data with minio
-You can follow this docs if you prefer: <a href="https://min.io/docs/minio/kubernetes/upstream/" target="_blank" style="font-size: 20px">Link</a>
+You can follow this docs, if you prefer: <a href="https://min.io/docs/minio/kubernetes/upstream/" target="_blank" style="font-size: 20px">Link</a>
 
 Create namespace name: minio-dev
 
@@ -236,18 +236,18 @@ Create namespace name: minio-dev
 
 <br><hr/>
 
-### Port Forward the minio pods and create access key ,secret key  (save the key properly because you can't rewatch it)
+### Port Forward the minio pod and create access key, secret key (save the keys properly, because you can't rewatch it)
     kubectl port-forward pod/minio 9000 9090 -n minio-dev
 
 <br><hr/>
 
-### Create bucket and copy the name of the bucket
+### Create a bucket and copy the name of the bucket
 In my case is name: my-bucket
 
 <br><hr/>
 
-### Setup backup data s3 for cluster
-You can follow this docs if you prefer: <a href="https://docs.pingcap.com/tidb-in-kubernetes/dev/backup-to-aws-s3-using-br" target="_blank" style="font-size: 20px">Link</a>
+### Setup backing data for the db cluster
+You can follow this docs, if you prefer: <a href="https://docs.pingcap.com/tidb-in-kubernetes/dev/backup-to-aws-s3-using-br" target="_blank" style="font-size: 20px">Link</a>
 
     kubectl create namespace backup-test
 
@@ -271,7 +271,7 @@ You can follow this docs if you prefer: <a href="https://docs.pingcap.com/tidb-i
 
 <br><hr/>
 
-### Copy the External IP of TiDB cluster context1
+### Copy the External IP of TiDB cluster context1 (db cluster1)
     kubectl get svc -n hello-1 --context=${context1}
 ![Alt text](./assets/external-ip.PNG)
 
@@ -282,7 +282,7 @@ You can follow this docs if you prefer: <a href="https://docs.pingcap.com/tidb-i
 ![Alt text](./assets/minio-ip.PNG)
 
 
-### Create admin on db
+### Create an admin user on db cluster1
 
     kubectl --context=${context1} port-forward -n hello-1 svc/tidbcluster1-tidb 15000:4000
 
@@ -308,22 +308,22 @@ You can follow this docs if you prefer: <a href="https://docs.pingcap.com/tidb-i
     backupType: full
     br:
         cluster: tidbcluster1 <- same name in tidbcluster/tidbcluster1.yaml
-        clusterNamespace: hello-1 <- namespace that tidbcluster is allocate
+        clusterNamespace: hello-1 <- namespace that the tidbcluster is allocated
     from:
         host: "20.247.251.119" <- External IP of tidbcluster
         port: 4000 
-        user: admin1 <- Name that you create in db 
+        user: admin1 <- User that you created in db 
         secretName: backup-tidb-secret 
     s3:
         provider: aws <- Can be anything you prefer
         secretName: s3-secret
         endpoint: http://10.1.1.44:9000 <- minio IP
-        bucket: my-bucket <- Bucket that create in minio dashboard
+        bucket: my-bucket <- Bucket that created in the minio dashboard
         prefix: my-full-backup-folder
 
 <br><hr/>
 
-### Apply full backup to minio
+### Apply full backup to Minio
     kubectl apply -f backup/full-backup-s3.yaml
-    # if data is exist then you successful backup data with minio
+    # if data is existed, then you successful backup data with minio
 ![Alt text](./assets/backup-db.PNG)
