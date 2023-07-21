@@ -325,5 +325,5 @@ You can follow this docs, if you prefer: <a href="https://docs.pingcap.com/tidb-
 
 ### Apply full backup to Minio
     kubectl apply -f backup/full-backup-s3.yaml
-    # if data is existed, then you successful backup data with minio
+    # if data is exist, then you successful backup data with minio
 ![Alt text](./assets/backup-db.PNG)
