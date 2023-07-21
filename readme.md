@@ -1,5 +1,5 @@
 # Usage
-This repository is designed to help you to create a database system between two kubernetes cluster and merge the data between two cluster in real time.   
+This repository is designed to help you to create a database system between two kubernetes clusters and merge the data between two clusters in real time.   
 
 
 ## Diagram
