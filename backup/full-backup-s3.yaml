@@ -1,0 +1,22 @@
+---
+apiVersion: pingcap.com/v1alpha1
+kind: Backup
+metadata:
+  name: demo1-full-backup-s3
+  namespace: backup-test
+spec:
+  backupType: full
+  br:
+    cluster: tidbcluster1
+    clusterNamespace: hello-1
+  from:
+    host: "20.247.251.119"
+    port: 4000
+    user: admin1
+    secretName: backup-tidb-secret
+  s3:
+    provider: aws
+    secretName: s3-secret
+    endpoint: http://10.1.1.44:9000
+    bucket: my-bucket
+    prefix: my-full-backup-folder

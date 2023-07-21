@@ -1,0 +1,77 @@
+# Cluster1
+apiVersion: pingcap.com/v1alpha1
+kind: TidbCluster
+metadata:
+  name: tidbcluster1
+  namespace: hello-1
+spec:
+  version: v6.5.0
+  timezone: UTC
+  pvReclaimPolicy: Retain
+  configUpdateStrategy: RollingUpdate
+  schedulerName: default-scheduler
+  topologySpreadConstraints:
+  - topologyKey: topology.kubernetes.io/zone
+  enableDynamicConfiguration: true
+  clusterDomain: "cluster.local"
+  acrossK8s: true
+  helper:
+    image: alpine:3.16.0
+  pd:
+    baseImage: pingcap/pd
+    maxFailoverCount: 0
+    replicas: 1
+    requests:
+      storage: "10Gi"
+    config: |
+      [dashboard]
+        internal-proxy = true
+      [replication]
+        location-labels = ["topology.kubernetes.io/zone", "kubernetes.io/hostname"]
+        max-replicas = 1
+    tolerations:
+    - effect: NoSchedule
+      key: dedicated
+      operator: Equal
+      value: pd
+  tikv:
+    baseImage: pingcap/tikv
+    maxFailoverCount: 0
+    replicas: 1
+    requests:
+      storage: "100Gi"
+    config: {}
+    tolerations:
+    - effect: NoSchedule
+      key: dedicated
+      operator: Equal
+      value: tikv
+  tidb:
+    baseImage: pingcap/tidb
+    maxFailoverCount: 0
+    replicas: 1
+    service:
+      annotations:
+        service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+      exposeStatus: true
+      externalTrafficPolicy: Local
+      type: LoadBalancer
+    config: |
+      [performance]
+        tcp-keep-alive = true
+    annotations:
+      tidb.pingcap.com/sysctl-init: "true"
+    podSecurityContext:
+      sysctls:
+      - name: net.ipv4.tcp_keepalive_time
+        value: "300"
+      - name: net.ipv4.tcp_keepalive_intvl
+        value: "75"
+      - name: net.core.somaxconn
+        value: "32768"
+    separateSlowLog: true
+    tolerations:
+    - effect: NoSchedule
+      key: dedicated
+      operator: Equal
+      value: tidb

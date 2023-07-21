@@ -1,0 +1,13 @@
+credentails.json
+certs
+tidbcluster/temp.yaml
+tidbcluster/tidb-monitor.yaml
+tidbcluster1-bak.yaml
+tidbcluster2-bak.yaml
+dbs-lb.yaml
+hello-v1.yaml
+hello-v2.yaml
+test2-dns.yaml
+readme2.md
+readme4.md
+minio-dev.yaml
