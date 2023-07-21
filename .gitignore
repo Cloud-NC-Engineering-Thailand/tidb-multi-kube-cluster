@@ -1,4 +1,4 @@
-credentails.json
+credentials.json
 certs
 tidbcluster/temp.yaml
 tidbcluster/tidb-monitor.yaml
@@ -10,5 +10,4 @@ hello-v2.yaml
 test2-dns.yaml
 readme2.md
 readme4.md
-minio-dev.yaml
-tidb
+tidb/
