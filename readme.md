@@ -3,7 +3,7 @@ This repository is designed to help you to create a database system between two 
 
 
 ## Diagram
-<!-- ![Alt text](./assets/diagram.jpg) -->
+![Alt text](./assets/diagram.jpg)
 
 ### Before you begin
 You need 2 kubernetes clusters avaiable on any cloud platforms
@@ -16,15 +16,15 @@ Kubectx Check out the installation here  <a href="https://linkerd.io/2.13/gettin
 ### Usage of Kubectx
 You don't have to write --context=$context every time
 
-    kubectx ${cluster1}
-    Switched to context "${cluster1}".
+    kubectx ${context1}
+    Switched to context "${context1}".
 
 ### Install TiDB operator CRDS
-    kubectx ${cluster1}
+    kubectx ${context1}
     kubectl create -f https://raw.githubusercontent.com/pingcap/tidb-operator/master/manifests/crd.yaml
 
 ### Install TiDB operator on Cluster 1
-    kubectx ${cluster1}
+    kubectx ${context1}
     helm repo add pingcap https://charts.pingcap.org/
     kubectl create namespace tidb-admin 
     helm install --namespace tidb-admin tidb-operator pingcap/tidb-operator --version v1.5.0-beta.1
@@ -32,7 +32,7 @@ You don't have to write --context=$context every time
 ### Install TiDB operator on Cluster 2
 Swaping context with kubectx is require in this step
 
-    kubectx ${cluster2}
+    kubectx ${context2}
     helm repo add pingcap https://charts.pingcap.org/
     kubectl create namespace tidb-admin 
     helm install --namespace tidb-admin tidb-operator pingcap/tidb-operator --version v1.5.0-beta.1
@@ -52,7 +52,7 @@ Swaping context with kubectx is require in this step
 <br><hr/>
 
 ### Get DNS port in our cluster machine
-    kubectl get svc -n kube-system --context=test1
+    kubectl get svc -n kube-system --context=${context1}
     
 <details>
     <summary>output</summary>
@@ -66,14 +66,14 @@ Swaping context with kubectx is require in this step
 
 External Ip of kube-dns is not avaiable case of type of kube-dns is ClusterIP if we change the type of kube-dns to be LoadBalancer the external-ip will be avaiable
 
-    kubectl edit svc kube-dns -n kube-system --context=test1
+    kubectl edit svc kube-dns -n kube-system --context=${context1}
 <details>
     <summary>Place to edit</summary>
 
 ![Alt text](./assets/change-type-dns.PNG)
 </details>
 
-    kubectl get svc -n kube-system --context=test1
+    kubectl get svc -n kube-system --context=${context1}
     # Do this with the other cluster and copy both of the External IP
     # In this example for ${cluster1} ip is 20.247.240.14
     # In this example for ${cluster2} ip is 20.205.255.74
@@ -111,28 +111,28 @@ Edit coredns/corednscluster2.yaml with your External Ip from cluster1
 
 ### Restart Core DNS
 
-    kubectl -n kube-system rollout restart deployment coredns --context=test1
-    kubectl -n kube-system rollout restart deployment coredns --context=test2
+    kubectl -n kube-system rollout restart deployment coredns --context=${context1}
+    kubectl -n kube-system rollout restart deployment coredns --context=${context2}
 
 ### Apply TiDBCluster
 
-    kubectl apply -f tidbcluster/tidbcluster1.yaml --context=test1
-    kubectl apply -f tidbcluster/tidbcluster2.yaml --context=test2
+    kubectl apply -f tidbcluster/tidbcluster1.yaml --context=${context1}
+    kubectl apply -f tidbcluster/tidbcluster2.yaml --context=${context2}
 
 ### Check Status TiDB Cluster on both cluster
-    kubectl get po -n hello-1 --context=test1
-    kubectl get po -n hello-2 --context=test2
+    kubectl get po -n hello-1 --context=${context1}
+    kubectl get po -n hello-2 --context=${context2}
 <details>
     <summary>Output</summary>
 
-    # Cluster: test1
+    # Cluster: ${context1}
     NAME                                     READY   STATUS     
     tidbcluster1-discovery-5c49fdd79-2njvh   1/1     Running   
     tidbcluster1-pd-0                        1/1     Running   
     tidbcluster1-tidb-0                      2/2     Running   
     tidbcluster1-tikv-0                      1/1     Running   
 
-    # Cluster: test2
+    # Cluster: ${context2}
     NAME                                      READY   STATUS    
     tidbcluster2-discovery-56886846f8-pnzkc   1/1     Running   
     tidbcluster2-pd-0                         1/1     Running   
@@ -145,7 +145,7 @@ Edit coredns/corednscluster2.yaml with your External Ip from cluster1
 
 We need to forward port to our machine and create a connection in mysql workbench or mysql client (in this case we will use mysql workbench) 
 
-    kubectl --context=test1 port-forward -n hello-1 svc/tidbcluster1-tidb 15000:4000
+    kubectl --context=${context1} port-forward -n hello-1 svc/tidbcluster1-tidb 15000:4000
 
 <details>
     <summary>Output</summary>
@@ -187,7 +187,7 @@ We need to forward port to our machine and create a connection in mysql workbenc
 ### Check that cluster have been merge
 Close Forward port in cluster1 and forward port for cluster2
     
-    kubectl --context=test2 port-forward -n hello-2 svc/tidbcluster2-tidb 15000:4000
+    kubectl --context=${context2} port-forward -n hello-2 svc/tidbcluster2-tidb 15000:4000
 
 ### Query some data
 
@@ -199,9 +199,9 @@ You can follow this docs if you prefer: <a href="https://min.io/docs/minio/kuber
 
 Create namespace name: minio-dev
 
-    kubectl create ns minio-dev --context=test1
+    kubectl create ns minio-dev --context=${context1}
 
-    kubectl apply -f minio/minio-dev.yaml --context=test1
+    kubectl apply -f minio/minio-dev.yaml --context=${context1}
 
 <details>
     <summary>Output</summary>
@@ -224,12 +224,12 @@ You can follow this docs if you prefer: <a href="https://docs.pingcap.com/tidb-i
 
     kubectl apply -f backup/backup-rbac.yaml -n backup-test
 
-    kubectl create secret generic s3-secret --from-literal=access_key=xxx --from-literal=secret_key=yyy -n backup-test --context=test1
+    kubectl create secret generic s3-secret --from-literal=access_key=xxx --from-literal=secret_key=yyy -n backup-test --context=${context1}
 
-    kubectl create secret generic backup-tidb-secret --from-literal=password=mypassword -n backup-test --context=test1
+    kubectl create secret generic backup-tidb-secret --from-literal=password=mypassword -n backup-test --context=${context1}
 
 
-    kubectl get secret -n backup-test --context=test1
+    kubectl get secret -n backup-test --context=${context1}
 
 <details>
     <summary>Output</summary>
@@ -241,17 +241,17 @@ You can follow this docs if you prefer: <a href="https://docs.pingcap.com/tidb-i
 </details>
 
 ### Copy the External IP of TiDB cluster context1
-    kubectl get svc -n hello-1 --context=test1
+    kubectl get svc -n hello-1 --context=${context1}
 ![Alt text](./assets/external-ip.PNG)
 
 ### Copy minio IP
-    kubectl get pod -n minio-dev -o wide --context=test1
+    kubectl get pod -n minio-dev -o wide --context=${context1}
 ![Alt text](./assets/minio-ip.PNG)
 
 
 ### Create admin on db
 
-    kubectl --context=test1 port-forward -n hello-1 svc/tidbcluster1-tidb 15000:4000
+    kubectl --context=${context1} port-forward -n hello-1 svc/tidbcluster1-tidb 15000:4000
 
     # Execute this command
     # Password should be the same as secret
