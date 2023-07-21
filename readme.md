@@ -19,15 +19,21 @@ You don't have to write --context=$context every time
     kubectx ${context1}
     Switched to context "${context1}".
 
+<br><hr/>
+
 ### Install TiDB operator CRDS
     kubectx ${context1}
     kubectl create -f https://raw.githubusercontent.com/pingcap/tidb-operator/master/manifests/crd.yaml
+
+<br><hr/>
 
 ### Install TiDB operator on Cluster 1
     kubectx ${context1}
     helm repo add pingcap https://charts.pingcap.org/
     kubectl create namespace tidb-admin 
     helm install --namespace tidb-admin tidb-operator pingcap/tidb-operator --version v1.5.0-beta.1
+
+<br><hr/>
 
 ### Install TiDB operator on Cluster 2
 Swaping context with kubectx is require in this step
@@ -36,6 +42,8 @@ Swaping context with kubectx is require in this step
     helm repo add pingcap https://charts.pingcap.org/
     kubectl create namespace tidb-admin 
     helm install --namespace tidb-admin tidb-operator pingcap/tidb-operator --version v1.5.0-beta.1
+
+<br><hr/>
 
 ### Confirm that TiDB operator is running 
     kubectl get pods --namespace tidb-admin -l app.kubernetes.io/instance=tidb-operator
@@ -109,15 +117,21 @@ Edit coredns/corednscluster2.yaml with your External Ip from cluster1
 
 </details>
 
+<br><hr/>
+
 ### Restart Core DNS
 
     kubectl -n kube-system rollout restart deployment coredns --context=${context1}
     kubectl -n kube-system rollout restart deployment coredns --context=${context2}
 
+<br><hr/>
+
 ### Apply TiDBCluster
 
     kubectl apply -f tidbcluster/tidbcluster1.yaml --context=${context1}
     kubectl apply -f tidbcluster/tidbcluster2.yaml --context=${context2}
+
+<br><hr/>
 
 ### Check Status TiDB Cluster on both cluster
     kubectl get po -n hello-1 --context=${context1}
@@ -140,6 +154,7 @@ Edit coredns/corednscluster2.yaml with your External Ip from cluster1
     tidbcluster2-tikv-0                       1/1     Running   
 </details>
 
+<br><hr/>
 
 ### Verify that you can connect to the database using mysql workbench or mysql client
 
@@ -154,9 +169,12 @@ We need to forward port to our machine and create a connection in mysql workbenc
         Forwarding from [::1]:15000 -> 4000
 </details>
 
+<br><hr/>
+
 ### Open mysql workbench
 ![Alt text](./assets/mysql-workbench.PNG)
 
+<br><hr/>
 
 ### Create mock data to table test
     use test;
@@ -183,16 +201,21 @@ We need to forward port to our machine and create a connection in mysql workbenc
 <img src="./assets/sql.PNG" style="width: 50rem; height: auto;">></img>
 </details>
 
+<br><hr/>
 
 ### Check that cluster have been merge
 Close Forward port in cluster1 and forward port for cluster2
     
     kubectl --context=${context2} port-forward -n hello-2 svc/tidbcluster2-tidb 15000:4000
 
+<br><hr/>
+
 ### Query some data
 
     SELECT * FROM test.User;
     # If you get the same output from cluster1 that mean the your cluster have been merge
+
+<br><hr/>
 
 ### Let Backup our data with minio
 You can follow this docs if you prefer: <a href="https://min.io/docs/minio/kubernetes/upstream/" target="_blank" style="font-size: 20px">Link</a>
@@ -211,11 +234,17 @@ Create namespace name: minio-dev
 
 </details>
 
+<br><hr/>
+
 ### Port Forward the minio pods and create access key ,secret key  (save the key properly because you can't rewatch it)
     kubectl port-forward pod/minio 9000 9090 -n minio-dev
 
+<br><hr/>
+
 ### Create bucket and copy the name of the bucket
 In my case is name: my-bucket
+
+<br><hr/>
 
 ### Setup backup data s3 for cluster
 You can follow this docs if you prefer: <a href="https://docs.pingcap.com/tidb-in-kubernetes/dev/backup-to-aws-s3-using-br" target="_blank" style="font-size: 20px">Link</a>
@@ -240,9 +269,13 @@ You can follow this docs if you prefer: <a href="https://docs.pingcap.com/tidb-i
 
 </details>
 
+<br><hr/>
+
 ### Copy the External IP of TiDB cluster context1
     kubectl get svc -n hello-1 --context=${context1}
 ![Alt text](./assets/external-ip.PNG)
+
+<br><hr/>
 
 ### Copy minio IP
     kubectl get pod -n minio-dev -o wide --context=${context1}
@@ -261,6 +294,8 @@ You can follow this docs if you prefer: <a href="https://docs.pingcap.com/tidb-i
     GRANT ALL ON test.* TO 'admin1';
     GRANT ALL ON mysql.* TO 'admin1';
     SHOW GRANTS FOR 'admin1';
+
+<br><hr/>
 
 ### Edit backup/full-backup-s3.yaml
 
@@ -285,6 +320,8 @@ You can follow this docs if you prefer: <a href="https://docs.pingcap.com/tidb-i
         endpoint: http://10.1.1.44:9000 <- minio IP
         bucket: my-bucket <- Bucket that create in minio dashboard
         prefix: my-full-backup-folder
+
+<br><hr/>
 
 ### Apply full backup to minio
     kubectl apply -f backup/full-backup-s3.yaml
